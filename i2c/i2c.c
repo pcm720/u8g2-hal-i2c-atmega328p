@@ -27,7 +27,7 @@
 
 /* I2C clock in Hz */
 #ifndef I2C_SCL_CLOCK
-#define I2C_SCL_CLOCK  100000L
+#define I2C_SCL_CLOCK  400000L
 #endif
 
 #define I2C_WAIT_CLEAR(v, b)  while(!((v) & _BV((b))))

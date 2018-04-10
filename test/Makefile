@@ -3,26 +3,38 @@ PRJ = u8g2_test
 MCU = atmega328p
 CLK = 16000000UL
 
-SRC = $(PRJ).c
+# External libraries
+U8G2LIB = ../libs/u8g2/csrc
+HALLIB = ../
+I2CLIB = ../i2c
+LIBSRC = $(wildcard *.c $(U8G2LIB)/*.c $(HALLIB)/*.c $(I2CLIB)/*.c)
+LIBOBJ = $(LIBSRC:.c=.o)
+LIBHDR = $(LIBSRC:.c=.h)
 
-CFLAGS  = -Os -mmcu=$(MCU) -DF_CPU=$(CLK) -Wall
-CFILES    = $(PRJ).c
-
-PRG = apu2 -P ft0
-AVRDUDE = taskset -c 1 avrdude -c $(PRG) -p $(MCU) -C ~/.avrduderc -C /etc/avrdude.conf
-LFU = 0xFF
-HFU = 0xDF
-EFU = 0x05
+# Compiler and linker settings
+CPPFLAGS = -mmcu=$(MCU) -DF_CPU=$(CLK) -I. -I$(LIBDIR) -Wall
+CFLAGS = -Os -g -std=gnu11 -Wall
+CFLAGS += -funsigned-char -funsigned-bitfields -fpack-struct -fshort-enums
+CFLAGS += -ffunction-sections -fdata-sections 
+LDFLAGS = -Wl,-Map,$(PRJ).map -mmcu=$(MCU) 
+LDFLAGS += -Wl,--gc-sections
 
 OBJCOPY = avr-objcopy
 OBJDUMP = avr-objdump
 SIZE    = avr-size --format=avr --mcu=$(MCU)
 CC      = avr-gcc
 
+# Programmer settings
+PRG = apu2 -P ft0
+AVRDUDE = taskset -c 1 avrdude -c $(PRG) -p $(MCU) -C ~/.avrduderc -C /etc/avrdude.conf
+LFU = 0xFF
+HFU = 0xDF
+EFU = 0x05
+
 all: $(PRJ).hex
 
 clean:
-	rm -f *.hex *.elf *.o
+	rm -f *.hex *.elf *.o *.map $(LIBOBJ)
 
 test:
 	$(AVRDUDE) -v
@@ -36,9 +48,11 @@ fuse:
 disasm: $(PRJ).elf
 	$(OBJDUMP) -d $(PRJ).elf
 
-$(PRJ).elf:
-	$(CC) $(CFLAGS) -c $(PRJ).c -o $(PRJ).o
-	$(CC) -mmcu=$(MCU) $(PRJ).o -o $(PRJ).elf
+%.o: %.c $(LIBHDR) Makefile
+	$(CC) $(CFLAGS) $(CPPFLAGS) -c -o $@ $<;
+
+$(PRJ).elf: $(LIBOBJ)
+	$(CC) $(LDFLAGS) $^ $(LDLIBS) -o $@
 
 $(PRJ).hex: $(PRJ).elf
 	rm -f $(PRJ).hex
