@@ -220,7 +220,7 @@ void displayInit(void){
 int main(void) {
 	displayInit();
 	while(1){
-			// picture loop
+		// picture loop
 		u8g2_ClearBuffer(&u8g2);
 		draw();
 		u8g2_SendBuffer(&u8g2);
@@ -231,6 +231,5 @@ int main(void) {
 
 		// delay between each page
 		_delay_ms(10);
-		
 	}
 }
